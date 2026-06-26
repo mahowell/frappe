@@ -137,6 +137,17 @@ class TestTwoFactor(FrappeTestCase):
 		token = int(pyotp.TOTP(otp_secret).now())
 		self.assertTrue(get_verification_obj(self.user, token, otp_secret))
 
+	def test_pre_login_2fa_does_not_crash_csrf_validation(self):
+		"""Ensure first 2FA login POST skips CSRF validation when session.data is missing."""
+		enable_2fa()
+		frappe.local.session = frappe._dict(user="Guest")
+		frappe.local.form_dict = frappe._dict(cmd="login", usr=self.user, pwd="Eastern_43A1W")
+		set_request(method="POST", path="login")
+
+		request = HTTPRequest()
+		self.assertTrue(frappe.local.response.get("verification"))
+		self.assertTrue(frappe.local.response.get("tmp_id"))
+
 	def test_render_string_template(self):
 		"""String template renders as expected with variables."""
 		args = {"issuer_name": "Frappe Technologies"}
